@@ -1,0 +1,74 @@
+services:
+  backend:
+    image: copygram:latest
+    container_name: backend
+    restart: unless-stopped
+    networks:
+      - copygram-network
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+      # - elasticsearch
+
+  db:
+    image: postgres:latest
+    container_name: db
+    restart: unless-stopped
+    networks:
+      - copygram-network
+    
+  redis:
+    image: redis:latest
+    container_name: redis
+    networks:
+      - copygram-network
+
+  celery:
+    image: copygram:latest
+    container_name: task-queue
+    restart: unless-stopped
+    command: celery -A copygram worker -l info
+    networks:
+      - copygram-network
+    depends_on:
+      - backend
+
+  celerybeat:
+    image: copygram:latest
+    container_name: task-scheduler
+    command: ["celery", "-A", "copygram", 
+              "beat", "-l", "info"]
+    networks:
+      - copygram-network
+    depends_on:
+      - celery
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    networks:
+      - copygram-network
+    volumes:
+      - ./nginx:/etc/nginx/templates
+      - ./ssl:/app/ssl
+      - ./backend:/app/backend
+    ports:
+      - "8080:80"
+      - "443:443"
+    depends_on:
+      - backend
+
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+  #   container_name: elasticsearch
+  #   ports:
+  #     - "9200:9200"
+  #   environment:
+  #     - discovery.type=single-node
+  #     - xpack.security.enabled=false
+  #     - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+  #   networks:
+  #     - copygram-network

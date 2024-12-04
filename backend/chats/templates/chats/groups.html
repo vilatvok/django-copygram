@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Groups{% endblock title %}
+
+{% block content %}
+	<a href="{% url 'chats:create_group' %}" class="btn btn-success">Create group</a>
+	{% for group in groups %}
+		<div class="card text-center mt-2">
+			<div class="card-body">
+				<h5 class="card-title">{{ group.name }}</h5>
+				<a href="{% url 'chats:group_chat' group.id %}" 
+					class="btn btn-success">Enter the group</a>
+				{% if request.user == group.owner %}
+					<form method="post" action="{% url 'chats:delete_group' group.id %}">
+						{% csrf_token %}
+						<button class="btn btn-success">Delete</button>
+					</form>
+				{% endif %}
+			</div>
+			<div class="card-footer text-body-secondary">{{ group.last_message_time }}</div>
+		</div>
+	{% endfor %}
+{% endblock content %}

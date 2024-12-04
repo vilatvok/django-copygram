@@ -1,0 +1,48 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    - name: Fix permissions
+      run: |
+        sudo chown -R ubuntu:ubuntu /home/ubuntu/actions-runner/_work
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set environment variables
+      run: |
+        cat <<EOF > ./backend/.env.prod
+        DEBUG=${{ secrets.DEBUG }}
+        EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
+        EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        SECRET_KEY=${{ secrets.SECRET_KEY }}
+        SOCIAL_AUTH_FACEBOOK_KEY=${{ secrets.SOCIAL_AUTH_FACEBOOK_KEY }}
+        SOCIAL_AUTH_FACEBOOK_SECRET=${{ secrets.SOCIAL_AUTH_FACEBOOK_SECRET }}
+        SOCIAL_AUTH_GOOGLE_OAUTH2_KEY=${{ secrets.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY }}
+        SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET=${{ secrets.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET }}
+        AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        EOF
+      
+    - name: Add SSL
+      run: |
+        mkdir -p ./ssl
+        echo "${{ secrets.SSL_CERTIFICATE }}" | base64 -d > ./ssl/copygram.crt
+        echo "${{ secrets.SSL_KEY }}" | base64 -d > ./ssl/copygram.key
+
+    - name: Build and Start Services
+      run: |
+        docker build -t copygram:latest ./backend
+        docker compose up -d

@@ -1,0 +1,9 @@
+.venv/
+.pytest_cache/
+media/
+__pycache__/
+staticfiles/
+.coverage
+htmlcov/
+test_media/
+fixtures/

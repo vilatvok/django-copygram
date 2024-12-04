@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" 
+      href="{% static 'img/favicon.png' %}">
+    <title>{% block title %}{% endblock title %}</title>
+    {% load django_bootstrap5 %} {% bootstrap_css %} {% bootstrap_javascript %}
+    <style>
+      a {
+				color: white;
+				text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark navbar-expand-lg 
+      navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'blogs:feed' %}">COPYGRAM</a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'blogs:explore' %}">Explore</a>
+            </li>
+            {% if user.is_authenticated %}
+							{% if user.is_superuser and user.is_staff %}
+								<li class="nav-item">
+									<a class="nav-link" href="{% url 'admin:index' %}">Admin page</a>
+								</li>
+							{% endif %}
+            	{% with user=request.user %}
+								<li class="nav-item">
+									<a class="nav-link" href="{{ user.get_absolute_url }}">Profile</a>
+								</li>
+								<li class="nav-item dropdown">
+									<a class="nav-link dropdown-toggle" href="#" 
+										role="button" data-bs-toggle="dropdown" 
+										aria-expanded="false">
+									{{ user.username }}
+									</a>
+									<ul class="dropdown-menu">
+										<li>
+											<form action="{% url 'users:logout' %}" method="post">
+												{% csrf_token %}
+												<button class="dropdown-item">
+													Logout
+												</button>
+											</form>
+										</li>
+										<li>
+											<a class="dropdown-item" 
+												href="{% url 'users:blocked' %}">Blocked</a>
+										</li>
+										<li>
+											<a class="dropdown-item" 
+												href="{% url 'blogs:archived_posts' %}">Archived posts</a>
+										</li>
+										<li>
+											<a class="dropdown-item" 
+												href="{% url 'blogs:archived_stories' %}">Archived stories</a>
+										</li>
+										<li>
+											<a class="dropdown-item" 
+												href="{% url 'blogs:uninteresting_posts' %}">Uninteresting posts</a>
+										</li>
+										<li>
+											<a class="dropdown-item" 
+												href="{% url 'users:activity' %}">Activity</a>
+										</li>
+										<li>
+											<a class="dropdown-item" 
+												href="{% url 'users:saved_posts' %}">Saved</a>
+										</li>
+										<li>
+											<a class="dropdown-item" 
+												href="{% url 'users:edit_settings' %}">Settings</a>
+										</li>
+									</ul>
+								</li>
+							{% endwith %}
+							<li class="nav-item">
+								<a class="nav-link" href="{% url 'users:actions' %}">Actions
+								{% if unread_actions %}
+									<span id="unread-messages">{{ unread_actions }}</span>
+								{% endif %}
+								</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="{% url 'chats:private_chats' %}">Chats
+								{% if unread_chat_messages %}
+									<span id="unread-messages">{{ unread_chat_messages }}</span>
+								{% endif %}
+								</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="{% url 'chats:groups' %}">Groups
+								{% if unread_group_messages %}
+									<span id="unread-messages">{{ unread_group_messages }}</span>
+								{% endif %}
+								</a>
+							</li>
+            {% else %}
+							<li class="nav-item">
+								<a class="nav-link" href="{% url 'users:login' %}">Login</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="{% url 'users:register' %}">Register</a>
+							</li>
+            {% endif %}
+          </ul>
+        </div>
+        <form action="{% url 'users:search' %}" class="d-flex">
+          <input type="search" id="form1" class="form-control me-2" name="q"/>
+          <button class="btn btn-success">Search</button>
+        </form>
+      </div>
+    </nav>
+    <div class="container-fluid mt-3 ms-1 mb-3">
+      {% block content %}{% endblock content %}
+    </div>
+    <script>
+      const user = '{{ request.user.username }}'
+    </script>
+    {% block jscontent %}{% endblock jscontent %}
+  </body>
+</html>

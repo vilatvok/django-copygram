@@ -1,0 +1,69 @@
+services:
+  backend:
+    extends:
+      file: common.yaml
+      service: backend
+    command: /app/backend/entrypoint.sh
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - ./backend/.env.prod
+
+  db:
+    extends:
+      file: common.yaml
+      service: db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d copygram"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - copygram-data:/var/lib/postgresql/data/
+    env_file:
+      - ./backend/.env.prod
+
+  redis:
+    extends:
+      file: common.yaml
+      service: redis
+
+  celery:
+    extends:
+      file: common.yaml
+      service: celery
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - ./backend/.env.prod
+
+  celerybeat:
+    extends:
+      file: common.yaml
+      service: celerybeat
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - ./backend/.env.prod
+    
+  nginx:
+    extends:
+      file: common.yaml
+      service: nginx
+    volumes:
+      - copygram-static-data:/app/staticfiles
+
+
+networks:
+  copygram-network:
+    driver: bridge
+    name: copygram-network
+
+
+volumes:
+  copygram-data:
+    driver: local
+    name: copygram-data
+  copygram-static-data:
+    driver: local
+    name: copygram-static-data

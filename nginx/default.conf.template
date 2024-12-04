@@ -1,0 +1,45 @@
+upstream copygram {
+    server backend:8000;
+}
+
+server {
+    listen 80;
+    server_name copygram.com;
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name copygram.com;
+
+    ssl_certificate /app/ssl/copygram.crt;
+    ssl_certificate_key /app/ssl/copygram.key;
+
+    error_log /var/log/nginx/error.log warn;
+    access_log /var/log/nginx/access.log main;
+
+    location / {
+        proxy_pass http://copygram;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+    }
+
+    location /ws/ {
+        proxy_pass http://copygram;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+
+    location /static/ {
+        alias /app/backend/staticfiles/;
+    }
+
+    location /media/ {
+        alias /app/backend/media/;
+    }
+}

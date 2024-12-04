@@ -1,0 +1,87 @@
+services:
+  backend:
+    extends:
+      file: common.yaml
+      service: backend
+    ports:
+      - "8000:8000"
+      - "5678:5678"
+    volumes:
+      - ./backend:/app/backend
+    command: ["uvicorn", "copygram.asgi:application",
+              "--host", "0.0.0.0", "--port", "8000", 
+              "--reload"]
+    # command: ["python3", "-m", "debugpy", "--listen",
+    #           "0.0.0.0:5678", "manage.py", "runserver", "0.0.0.0:8000"]
+    env_file:
+      - ./backend/.env.dev
+
+  db:
+    extends:
+      file: common.yaml
+      service: db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d copygram-dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - copygram-dev-data:/var/lib/postgresql/data/
+    env_file:
+      - ./backend/.env.dev
+
+  redis:
+    extends:
+      file: common.yaml
+      service: redis
+
+  celery:
+    extends:
+      file: common.yaml
+      service: celery
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - ./backend/.env.dev
+
+  celerybeat:
+    extends:
+      file: common.yaml
+      service: celerybeat
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - ./backend/.env.dev
+
+  nginx:
+    extends:
+      file: common.yaml
+      service: nginx
+    volumes:
+      - copygram-static-dev-data:/app/staticfiles
+
+  # elasticsearch:
+  #   extends:
+  #     file: common.yaml
+  #     service: elasticsearch
+  #   volumes:
+  #     - copygram-dev-esdata:/usr/share/elasticsearch/data
+
+
+networks:
+  copygram-network:
+    driver: bridge
+    name: copygram-network
+
+
+volumes:
+  copygram-dev-data:
+    driver: local
+    name: copygram-dev-data
+  copygram-static-dev-data:
+    driver: local
+    name: copygram-static-dev-data
+
+  # copygram-dev-esdata:
+  #   driver: local
+  #   name: copygram-dev-esdata
