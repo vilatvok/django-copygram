@@ -26,18 +26,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv('DEBUG') == 'TRUE'
 
 ALLOWED_HOSTS = [
-    'ec2-54-165-70-186.compute-1.amazonaws.com',
-    'copygram.com',
     'localhost',
-    '127.0.0.1',
+    'copygram.com',
+    '44.221.254.194'
+    'ec2-44-221-254-194.compute-1.amazonaws.com',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
     'https://localhost',
-    'http://copygram.com:8000',
     'https://copygram.com',
-    'https://ec2-54-165-70-186.compute-1.amazonaws.com',
+    'https://44.221.254.194'
+    'https://ec2-44-221-254-194.compute-1.amazonaws.com',
 ]
 
 # Security
