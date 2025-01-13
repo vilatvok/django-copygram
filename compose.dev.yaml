@@ -8,9 +8,7 @@ services:
       - "5678:5678"
     volumes:
       - ./backend:/app/backend
-    command: ["uvicorn", "copygram.asgi:application",
-              "--host", "0.0.0.0", "--port", "8000", 
-              "--reload"]
+    command: /app/backend/entrypoint.dev.sh
     # command: ["python3", "-m", "debugpy", "--listen",
     #           "0.0.0.0:5678", "manage.py", "runserver", "0.0.0.0:8000"]
     env_file:
@@ -26,7 +24,7 @@ services:
       timeout: 10s
       retries: 3
     volumes:
-      - copygram-dev-data:/var/lib/postgresql/data/
+      - copygram-dev-dbdata:/var/lib/postgresql/data/
     env_file:
       - ./backend/.env.dev
 
@@ -34,6 +32,8 @@ services:
     extends:
       file: common.yaml
       service: redis
+    volumes:
+      - copygram-dev-redisdata:/data
 
   celery:
     extends:
@@ -58,7 +58,7 @@ services:
       file: common.yaml
       service: nginx
     volumes:
-      - copygram-static-dev-data:/app/staticfiles
+      - copygram-dev-staticdata:/app/staticfiles
 
   # elasticsearch:
   #   extends:
@@ -66,6 +66,11 @@ services:
   #     service: elasticsearch
   #   volumes:
   #     - copygram-dev-esdata:/usr/share/elasticsearch/data
+
+  # rabbit:
+  #   extends:
+  #     file: common.yaml
+  #     service: rabbit
 
 
 networks:
@@ -75,13 +80,15 @@ networks:
 
 
 volumes:
-  copygram-dev-data:
+  copygram-dev-dbdata:
     driver: local
-    name: copygram-dev-data
-  copygram-static-dev-data:
+    name: copygram-dev-dbdata
+  copygram-dev-staticdata:
     driver: local
-    name: copygram-static-dev-data
-
+    name: copygram-dev-staticdata
+  copygram-dev-redisdata:
+    driver: local
+    name: copygram-dev-redisdata
   # copygram-dev-esdata:
   #   driver: local
   #   name: copygram-dev-esdata

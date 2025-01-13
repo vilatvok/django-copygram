@@ -1,5 +1,10 @@
 CREATE OR REPLACE FUNCTION get_rec_by_saved(users integer[])
-RETURNS TABLE(user_id integer, owner_id bigint, post_id bigint, is_saved integer)
+RETURNS TABLE(
+    user_id integer,
+    owner_id bigint,
+    post_id bigint,
+    is_saved integer
+)
 LANGUAGE plpgsql
 AS $$
 BEGIN

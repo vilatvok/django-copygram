@@ -23,7 +23,11 @@ class BaseMedia(BaseModel):
 
 
 class Post(BaseMedia):
-    owner = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='posts')
+    owner = models.ForeignKey(
+        to='users.User',
+        on_delete=models.CASCADE,
+        related_name='posts',
+    )
     description = models.TextField(blank=True)
     likes = models.ManyToManyField('users.User', related_name='likes', blank=True)
     saved = models.ManyToManyField('users.User', related_name='saved', blank=True)

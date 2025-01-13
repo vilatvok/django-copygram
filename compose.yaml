@@ -19,7 +19,7 @@ services:
       timeout: 10s
       retries: 3
     volumes:
-      - copygram-data:/var/lib/postgresql/data/
+      - copygram-dbdata:/var/lib/postgresql/data/
     env_file:
       - ./backend/.env.prod
 
@@ -27,6 +27,8 @@ services:
     extends:
       file: common.yaml
       service: redis
+    volumes:
+      - copygram-redisdata:/data
 
   celery:
     extends:
@@ -51,7 +53,7 @@ services:
       file: common.yaml
       service: nginx
     volumes:
-      - copygram-static-data:/app/staticfiles
+      - copygram-staticdata:/app/staticfiles
 
 
 networks:
@@ -61,9 +63,12 @@ networks:
 
 
 volumes:
-  copygram-data:
+  copygram-dbdata:
     driver: local
-    name: copygram-data
-  copygram-static-data:
+    name: copygram-dbdata
+  copygram-staticdata:
     driver: local
-    name: copygram-static-data
+    name: copygram-staticdata
+  copygram-redisdata:
+    driver: local
+    name: copygram-redisdata

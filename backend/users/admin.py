@@ -82,14 +82,14 @@ class FollowerAdmin(admin.ModelAdmin):
     list_display = ('id', 'from_user', 'to_user')
     search_fields = ('from_user__username', 'to_user__username')
 
-    def has_add_permission(self, request):
-        return False
+    # def has_add_permission(self, request):
+    #     return False
     
-    def has_change_permission(self, request, obj=None):
-        return False
+    # def has_change_permission(self, request, obj=None):
+    #     return False
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
 
 
 @admin.register(models.Block)

@@ -33,6 +33,7 @@ class ActionsView(ListView):
 
 
 class ClearActionsView(View):
+
     def post(self, request):
         user = request.user
         Action.objects.filter(
@@ -43,6 +44,7 @@ class ClearActionsView(View):
 
 
 class DeleteActionView(View):
+
     def delete(self, request, action_id):
         user = request.user
         action = Action.objects.get(id=action_id)
@@ -96,47 +98,18 @@ class SearchView(ListView):
 
     def get_queryset(self):
         request = self.request
-        username = request.user.username
         q = request.GET.get('q')
+        users_queryset = self.get_users_queryset(q, request.user)
+        tags_queryset = self.get_tags_queryset(q)
+        return {'users': users_queryset, 'tags': tags_queryset}
 
-        # * ELASTICSEARCH SEARCH
-        # es_q1 = Q('prefix', username=q)
-        # es_q2 = Q('prefix', first_name=q)
-        # es_q3 = Q('prefix', last_name=q)
-        # should = [es_q1, es_q2, es_q3]
-
-        # users_queryset = (
-        #     UserDocument.search().
-        #     query('bool', should=should).
-        #     filter('bool', must_not=[Q('term', username=username)])
-        # )
-        # users_result = users_queryset.execute()
-        # users_ids = [int(user.meta.id) for user in users_result]
-
-        blocked_users = get_blocked_users(request.user)
+    def get_users_queryset(self, q: str, user: User):
+        blocked_users = get_blocked_users(user)
         is_followed = Follower.objects.filter(
-            from_user=request.user,
+            from_user=user,
             to_user=models.OuterRef('pk'),
         )
-        # users_queryset = (
-        #     User.objects.exclude(id__in=blocked_users).
-        #     filter(id__in=users_ids).
-        #     annotate(
-        #         followers_count=models.Count('followers'),
-        #         is_followed=models.Exists(is_followed),
-        #     ).order_by('-followers_count')
-        # )
 
-        # es_q4 = Q('prefix', name=q)
-        # tags_queryset = (
-        #     TagDocument.search().
-        #     query('bool', should=[es_q4])
-        # )
-        # tags_result = tags_queryset.execute()
-        # tags_ids = [int(tag.meta.id) for tag in tags_result]
-        # tags_queryset = Tag.objects.filter(id__in=tags_ids)
-
-        # * POSTGRES SEARCH
         query = SearchQuery(q)
         search_vector = SearchVector('username', 'first_name', 'last_name')
         users_queryset = (
@@ -149,6 +122,37 @@ class SearchView(ListView):
             ).filter(search=query).order_by("-rank")
         )
 
+        # * Elasticsearch
+        # Get users from Elasticsearch
+        # search_by_username = Q('prefix', username=q)
+        # search_by_first_name = Q('prefix', first_name=q)
+        # search_by_last_name = Q('prefix', last_name=q)
+        # should = [
+        #     search_by_username,
+        #     search_by_first_name,
+        #     search_by_last_name,
+        # ]
+
+        # users_queryset = (
+        #     UserDocument.search().
+        #     query('bool', should=should).
+        #     filter('bool', must_not=[Q('term', username=user.username)])
+        # )
+        # users_result = users_queryset.execute()
+        # users_ids = [int(user.meta.id) for user in users_result]
+
+        # # Get users from database
+        # users_queryset = (
+        #     User.objects.exclude(id__in=blocked_users).
+        #     filter(id__in=users_ids).
+        #     annotate(
+        #         followers_count=models.Count('followers'),
+        #         is_followed=models.Exists(is_followed),
+        #     ).order_by('-followers_count')
+        # )
+        return users_queryset
+
+    def get_tags_queryset(self, q: str):
         query = SearchQuery(q)
         search_vector = SearchVector('name')
         tags_queryset = Tag.objects.annotate(
@@ -156,7 +160,16 @@ class SearchView(ListView):
             rank=SearchRank(search_vector, query),
         ).filter(search=query).order_by("-rank")
 
-        return {'users': users_queryset, 'tags': tags_queryset}
+        # * Elasticsearch
+        # search_by_name = Q('prefix', name=q)
+        # tags_queryset = (
+        #     TagDocument.search().
+        #     query('bool', should=[search_by_name])
+        # )
+        # tags_result = tags_queryset.execute()
+        # tags_ids = [int(tag.meta.id) for tag in tags_result]
+        # tags_queryset =Tag.objects.filter(id__in=tags_ids)
+        return tags_queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

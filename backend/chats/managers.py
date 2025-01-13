@@ -2,6 +2,7 @@ from django.db.models import Manager, OuterRef, Subquery
 
 
 class ChatManager(Manager):
+
     def annotated(self):
         from chats.models import Message
 

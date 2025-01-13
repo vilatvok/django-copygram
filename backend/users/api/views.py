@@ -175,6 +175,7 @@ class UserViewSet(CustomModelViewSet):
 
 
 class RegisterConfirmAPIView(APIView):
+
     def get(self, request, uidb64, token):
         try:
             user, is_valid = check_token(uidb64, token)
@@ -235,6 +236,7 @@ class PasswordChangeAPIView(APIView):
 
 
 class PasswordResetAPIView(APIView):
+
     def post(self, request):
         serializer = serializers.PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -249,6 +251,7 @@ class PasswordResetAPIView(APIView):
 
 
 class PasswordResetConfirmAPIView(APIView):
+
     def post(self, request, uidb64, token):
         serializer = serializers.PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -453,8 +456,8 @@ class VipAPIView(APIView):
         serializer = serializers.VipSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        active_key = 'active_vip_users'
-        is_activated = redis_client.sismember(active_key, user.username)
+        vip_users_key = 'active_vip_users'
+        is_activated = redis_client.sismember(vip_users_key, user.username)
         if is_activated:
             return Response({'status': 'Wait until the current vip status ends'})
 
@@ -464,10 +467,12 @@ class VipAPIView(APIView):
         if vip_duration < duration or vip_duration == 0:
             return Response({'status': 'Error'})
 
-        difference = vip_duration - duration
-        key = f'user:{user.username}:vip'
-        redis_client.set(key, difference)
-        redis_client.sadd(active_key, user.username)
+        remaining_duration = vip_duration - duration
+        remaining_duration_key = f'user:{user.username}:vip'
+        with redis_client.pipeline(transaction=True) as pipe:
+            pipe.set(remaining_duration_key, remaining_duration)
+            pipe.sadd(vip_users_key, user.username)
+            pipe.execute()
 
         # schedule the task
         # remove the user from VIP users after the end of the VIP status

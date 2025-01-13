@@ -3,6 +3,7 @@ from rest_framework.response import Response
 
 
 class FollowerRequestMixin:
+
     @staticmethod
     def generate_response(response):
         data = {'status': response}

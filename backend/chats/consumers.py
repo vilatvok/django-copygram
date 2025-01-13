@@ -12,6 +12,7 @@ from chats.models import Message, PrivateChat, GroupChat, MessageImage
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+
     async def connect(self):
         self.user = self.scope['user']
         self.chat = self.scope['url_route']['kwargs']['chat_id']

@@ -5,6 +5,7 @@ from users.models import User
 
 
 class Command(BaseCommand):
+
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument('--count', dest='count', type=int)
 

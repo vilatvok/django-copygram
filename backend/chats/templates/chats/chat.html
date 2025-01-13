@@ -110,7 +110,7 @@
 		{% if request.user.avatar %}
 			const avatar = '{{ request.user.avatar.url }}'
 		{% else %}
-			const avatar = "{% static 'users/images/user.png' %}"
+			const avatar = "{% static 'users/img/user.png' %}"
 		{% endif %}
 	</script>
 	<script src="{% static 'chats/js/chat.js' %}"></script>

@@ -26,6 +26,7 @@ class FollowingView(FollowersMixin):
 
 
 class FollowUserView(View):
+
     def post(self, request, user_slug):
         from_user = request.user
         to_user = User.objects.get(slug=user_slug)
@@ -34,6 +35,7 @@ class FollowUserView(View):
 
 
 class UnfollowUserView(View):
+
     def delete(self, request, user_slug):
         from_user = request.user
         to_user = User.objects.get(slug=user_slug)
@@ -42,6 +44,7 @@ class UnfollowUserView(View):
 
 
 class AcceptFollowerView(View):
+
     def post(self, request, user_slug):
         response = process_follower_request(user_slug, request.user, 'accept')
         if response == 'Accepted':
@@ -50,6 +53,7 @@ class AcceptFollowerView(View):
 
 
 class RejectFollowerView(View):
+
     def post(self, request, user_slug):
         response = process_follower_request(user_slug, request.user, 'reject')
         if response == 'Rejected':

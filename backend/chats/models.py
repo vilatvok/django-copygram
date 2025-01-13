@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import (
     GenericForeignKey,
@@ -20,14 +19,12 @@ class PrivateChat(models.Model):
 class GroupChat(BaseModel):
     owner = models.ForeignKey(
         to='users.User',
-        on_delete=models.SET_DEFAULT,
-        default=None,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
         related_name='group_owner',
     )
-    image = models.ImageField(
-        upload_to='rooms/%Y/%m/%d/',
-        default='static/images/group.png',
-    )
+    image = models.ImageField(upload_to='rooms/%Y/%m/%d/', blank=True)
     name = models.CharField(max_length=50)
     users = models.ManyToManyField('users.User', related_name='group_chats')
     messages = GenericRelation('chats.Message', related_query_name='group_chat')
@@ -60,4 +57,4 @@ class MessageImage(models.Model):
         on_delete=models.CASCADE,
         related_name='files'
     )
-    file = models.FileField(blank=True, upload_to='messages/%Y/%m/%d/')
+    file = models.FileField(upload_to='messages/%Y/%m/%d/', blank=True)

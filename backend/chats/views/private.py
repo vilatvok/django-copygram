@@ -41,6 +41,7 @@ class PrivateChatView(ChatMixin):
 
 
 class CreatePrivateChatView(View):
+
     def post(self, request, user_slug):
         user = User.objects.get(slug=user_slug)
         obj = PrivateChat.objects.create()

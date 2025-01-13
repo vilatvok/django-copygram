@@ -75,7 +75,7 @@
 									<a class="btn btn-success me-1 flex-grow-1" 
 										href="{% url 'blogs:create_post' %}" 
 										role="button">Add post</a>
-									<a class="btn btn-success flex-grow-1" 
+									<a class="btn btn-success me-1 flex-grow-1" 
 										href="{% url 'blogs:create_story' %}" 
 										role="button">Add story</a>
 									<form action="{% url 'users:delete_account' %}" method="post">
@@ -95,9 +95,9 @@
 									</button>
 									<form action="{% url 'users:block' user.slug %}" method="post">
 										{% csrf_token %}
-										<button class="btn btn-success flex-grow-1">Block</button>
+										<button class="btn btn-success me-1 flex-grow-1">Block</button>
 									</form>
-									<a class="btn btn-success flex-grow-1" 
+									<a class="btn btn-success me-1 flex-grow-1" 
 										href="{% url 'users:create_report' user.slug %}"
 										role="button">
 										Report
@@ -125,7 +125,7 @@
 	{% if not user.is_followed and user.privacy.private_account and user != request.user %}
 		<p class="display-5">Private account:</p> 
 	{% else %}
-		<div class="row row-cols-1 row-cols-md-5 g-4 mt-2">
+		<div class="row row-cols-1 row-cols-md-5 g-4 mt-1">
 			{% for post in posts %}
 				<div class="col">
 					<div class="card h-100" style="border-radius: 20px; overflow: hidden;">

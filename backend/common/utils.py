@@ -43,7 +43,8 @@ def create_action(owner, act, target, file=None):
             key = f'user:{target.owner.username}:unread_actions'
         except AttributeError:
             key = f'user:{target.username}:unread_actions'
-        redis_client.sadd(key, action.id)
+        else:
+            redis_client.sadd(key, action.id)
 
 
 def get_blocked_users(user):

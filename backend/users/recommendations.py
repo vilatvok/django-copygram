@@ -1,9 +1,10 @@
 import pandas as pd
 
-from sklearn.metrics.pairwise import cosine_similarity
 from django.db import connection
 from django.db.models import Q
+from redis.client import Pipeline
 from celery.result import allow_join_result
+from sklearn.metrics.pairwise import cosine_similarity
 
 from common import redis_client
 from blogs.models import Post
@@ -12,19 +13,22 @@ from users.models import User
 
 
 class RedisCoordinator:
+
     def __init__(self, key: str):
         self.key = key
 
-    def store_recommendations(self, recommendations) -> None:
+    def store_recommendations(
+        self,
+        recommendations: set[int],
+        pipeline: Pipeline = None,
+    ) -> None:
         if recommendations:
-            redis_client.sadd(self.key, *recommendations)
+            client = pipeline if pipeline else redis_client
+            client.sadd(self.key, *recommendations)
 
-    def clear_recommendations(self) -> None:
-        redis_client.delete(self.key)
-
-    def remove_recommendations(self, recommendations) -> None:
-        if recommendations:
-            redis_client.srem(self.key, *recommendations)
+    def clear_recommendations(self, pipeline: Pipeline = None) -> None:
+        client = pipeline if pipeline else redis_client
+        client.delete(self.key)
 
     def get_recommendations(self) -> set[int]:
         resp = redis_client.smembers(self.key)
@@ -231,6 +235,7 @@ class RecommendationsBySaved(BaseRecommendation):
 
 # Main Recommender class that orchestrates recommendations
 class Recommender:
+
     def __init__(self, user: User) -> None:
         self.user = user
         self.redis_follows_coordinator = RedisCoordinator(
@@ -338,13 +343,18 @@ class Recommender:
     def generate_recommendations(self) -> None:
         self.load_db_data()
   
-        # Clear all recommendations
-        self.redis_follows_coordinator.clear_recommendations()
-        self.redis_posts_coordinator.clear_recommendations()
+        with redis_client.pipeline(transaction=True) as pipeline:
 
-        response = self.generate_follow_recommendations()
-        if len(response):
-            self.generate_post_recommendations()
+            # Clear all recommendations
+            self.redis_follows_coordinator.clear_recommendations()
+            self.redis_posts_coordinator.clear_recommendations()
+
+            response = self.generate_follow_recommendations()
+            if len(response):
+                self.generate_post_recommendations()
+            
+            # Execute all commands in the pipeline
+            pipeline.execute()
 
     def complete_recommendations(self, coordinator, amount: int = 50) -> None:
         recommendations = coordinator.get_recommendations()

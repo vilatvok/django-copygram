@@ -16,8 +16,6 @@ from blogs.models import Story
 
 
 class ProfileView(DetailView):
-    """Show user profile."""
-
     model = User
     template_name = 'users/profile.html'
     context_object_name = 'user'
@@ -103,6 +101,7 @@ class BlockedView(ListView):
 
 
 class BlockUserView(View):
+
     def post(self, request, user_slug):
         user = request.user
         to_user = User.objects.get(slug=user_slug)
@@ -113,6 +112,7 @@ class BlockUserView(View):
 
 
 class UnblockUserView(View):
+
     def post(self, request, user_slug):
         user = request.user
         to_user = User.objects.get(slug=user_slug)

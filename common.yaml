@@ -10,7 +10,7 @@ services:
     depends_on:
       - db
       - redis
-      # - elasticsearch
+      - elasticsearch
 
   db:
     image: postgres:latest
@@ -72,3 +72,13 @@ services:
   #     - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
   #   networks:
   #     - copygram-network
+
+  # rabbit:
+  #   image: rabbitmq:3-management
+  #   hostname: rabbit
+  #   container_name: message-broker
+  #   networks:
+  #     - copygram-network
+  #   ports:
+  #     - "15672:15672"
+  #     - "5672:5672"

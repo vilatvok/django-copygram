@@ -47,30 +47,30 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
     # * AWS
-    USE_S3 = True
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        },
+    # USE_S3 = True
+    # STORAGES = {
+    #     "default": {
+    #         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    #     },
 
-        "staticfiles": {
-            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-        }
-    }
+    #     "staticfiles": {
+    #         "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+    #     }
+    # }
 
-    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = 'copygrambucket'
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    AWS_DEFAULT_ACL = 'public-read'
+    # AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    # AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    # AWS_STORAGE_BUCKET_NAME = 'copygrambucket'
+    # AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    # AWS_DEFAULT_ACL = 'public-read'
 
-    # s3 static settings
-    STATIC_LOCATION = 'static'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+    # # s3 static settings
+    # STATIC_LOCATION = 'static'
+    # STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
 
-    # s3 public media settings
-    PUBLIC_MEDIA_LOCATION = 'media'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
+    # # s3 public media settings
+    # PUBLIC_MEDIA_LOCATION = 'media'
+    # MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
 
 else:
     def custom_show_toolbar(request):
@@ -271,6 +271,7 @@ DATABASES = {
 #     },
 # }
 
+# CELERY_BROKER = 'amqp://guest@rabbit:5672'
 CELERY_BROKER = 'redis://redis:6379/0'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 

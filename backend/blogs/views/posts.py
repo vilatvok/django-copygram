@@ -17,6 +17,7 @@ from users.models import Follower
 
 
 class ExploreView(PostsMixin):
+
     def perform_queryset(self):
         user = self.request.user
         if user.is_authenticated:
@@ -27,6 +28,7 @@ class ExploreView(PostsMixin):
 
 
 class FeedView(PostsMixin):
+
     def perform_queryset(self):
         return utils.get_feed_posts(self.request.user.id)
 
@@ -50,13 +52,16 @@ class PostView(DetailView):
 
         # store post views in redis
         post_views_key = f'post:{post.id}:views'
-        if redis_client.sismember(post_views_key, current_user.username):
-            context['total_views'] = redis_client.scard(post_views_key)
-        else:
-            user_viewed_key = f'user:{current_user.username}:viewed_posts'
-            redis_client.sadd(user_viewed_key, post.id)
-            redis_client.sadd(post_views_key, current_user.username)
-            context['total_views'] = redis_client.scard(post_views_key)
+        with redis_client.pipeline(transaction=True) as pipeline:
+            if redis_client.sismember(post_views_key, current_user.username):
+                pipeline.scard(post_views_key)
+            else:
+                viewed_posts_key = f'user:{current_user.username}:viewed_posts'
+                pipeline.sadd(viewed_posts_key, post.id)
+                pipeline.sadd(post_views_key, current_user.username)
+                pipeline.scard(post_views_key)
+            pipeline_response = pipeline.execute()
+        context['total_views'] = pipeline_response[-1]
 
         owner_privacy = post.owner.privacy
         is_follower = Follower.objects.filter(
@@ -69,7 +74,6 @@ class PostView(DetailView):
             user=current_user,
             post=post,
         ).exists()
-
 
         # TODO: Refactor this
         if post.is_comment:
@@ -188,26 +192,31 @@ class DeletePostView(DeleteView):
 
 
 class SavePostView(PostActionMixin):
+
     def post(self, request, post_id):
         return self.get_action_response(request, post_id, utils.save_post)
 
 
 class UnsavePostView(PostActionMixin):
+
     def delete(self, request, post_id):
         return self.get_action_response(request, post_id, utils.unsave_post)
 
 
 class LikePostView(PostActionMixin):
+
     def post(self, request, post_id):
         return self.get_action_response(request, post_id, utils.like_post)
 
 
 class UnlikePostView(PostActionMixin):
+
     def delete(self, request, post_id):
         return self.get_action_response(request, post_id, utils.unlike_post)
 
 
 class CommentOnView(View):
+
     def post(self, request, post_id):
         user = request.user
         post = Post.objects.annotated().get(id=post_id)
@@ -220,6 +229,7 @@ class CommentOnView(View):
 
 
 class DeleteCommentView(View):
+
     def delete(self, request, post_id, comment_id):
         post = Post.objects.get(id=post_id)
         comment = Comment.objects.get(id=comment_id)
@@ -244,6 +254,7 @@ class TagPostsView(ListView):
 
 
 class AddUninterestingPostView(View):
+
     def post(self, request, post_id):
         user = request.user
         UninterestingPost.objects.create(user=user, post_id=post_id)
@@ -251,6 +262,7 @@ class AddUninterestingPostView(View):
 
 
 class RemoveUninterestingPostView(View):
+
     def post(self, request, post_id):
         user = request.user
         un_post = UninterestingPost.objects.filter(user=user, post_id=post_id)

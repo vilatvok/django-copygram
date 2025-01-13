@@ -1,5 +1,13 @@
-CREATE OR REPLACE FUNCTION get_rec_by_follows(user_id integer, users_follow integer[])
-RETURNS TABLE(from_user_id bigint, to_user_id bigint, is_following integer, post_id bigint)
+CREATE OR REPLACE FUNCTION get_rec_by_follows(
+    user_id integer,
+    users_follow integer[]
+)
+RETURNS TABLE(
+    from_user_id bigint,
+    to_user_id bigint,
+    is_following integer,
+    post_id bigint
+)
 LANGUAGE plpgsql 
 AS $$
 BEGIN

@@ -1,7 +1,7 @@
 import secrets
 
 from datetime import timedelta, datetime, time
-from django.db import models, transaction, IntegrityError
+from django.db import models, transaction
 from django.db.models.fields.generated import GeneratedField
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
@@ -42,12 +42,7 @@ class User(AbstractUser):
         },
     )
     slug = models.SlugField(unique=True, max_length=255)
-    # TODO: Add default avatar
-    avatar = models.ImageField(
-        upload_to='users/%Y/%m/%d/',
-        blank=True,
-        null=True,
-    )
+    avatar = models.ImageField(upload_to='users/%Y/%m/%d/', blank=True)
     email = models.EmailField(unique=True)
     is_online = models.BooleanField(default='False')
     actions = GenericRelation(to='Action', related_query_name='user')
@@ -149,7 +144,10 @@ class UserActivity(models.Model):
         output_field=models.DurationField(),
         db_persist=True,
     )
-    
+
+    class Meta:
+        verbose_name_plural = 'User activities'
+
 
 class UserDayActivity(models.Model):
     user = models.ForeignKey(
@@ -167,6 +165,7 @@ class UserDayActivity(models.Model):
                 name='unique_day_activity',
             ),
         ]
+        verbose_name_plural = 'User day activities' 
 
     def get_day_activities(self):
         return self.user.activities.filter(login_time__date=self.date)
@@ -300,6 +299,7 @@ class Report(BaseModel):
     report_from = models.ForeignKey(
         to='users.User',
         on_delete=models.SET_NULL,
+        blank=True,
         null=True,
         related_name='reports',
     )
