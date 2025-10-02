@@ -64,14 +64,16 @@
 				{% endif %}
 			</p>
 			{% if post.owner == request.user %}
-				<form action="{% url 'blogs:delete_post' post.id %}" method="post">
-					{% csrf_token %}
-					<button class="btn btn-success">Delete</button>
-				</form>
-				<form action="{% url 'blogs:restore_post' post.id %}" method="post">
-					{% csrf_token %}
-					<button class="btn btn-success">Restore</button>
-				</form>
+				<div class="d-flex">
+					<form action="{% url 'blogs:delete_post' post.id %}" method="post">
+						{% csrf_token %}
+						<button class="btn btn-success me-1">Delete</button>
+					</form>
+					<form action="{% url 'blogs:restore_post' post.id %}" method="post">
+						{% csrf_token %}
+						<button class="btn btn-success">Restore</button>
+					</form>
+				</div>
 			{% endif %}
 			<p class="card-text mt-2"><small class="text-muted">{{ post.created_at }}</small></p>
 		</div>

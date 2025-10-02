@@ -402,15 +402,23 @@ class Recommender:
                 )
                 # Receive similar posts to the viewed ones
                 if len(additional) and len(viewed_posts_qs):
-                    filter_additional_posts = update_posts_recommendations.delay(
+                    filtered_additional = update_posts_recommendations.delay(
                         viewed_posts_qs,
                         additional
                     )
                     with allow_join_result():
-                        additional = list(filter_additional_posts.get())
+                        filtered_additional = list(filtered_additional.get())
+                        if len(filtered_additional):
+                            additional = filtered_additional
+                        else:
+                            additional_posts_ids = set(
+                                map(lambda x: x['id'], additional)
+                            )
+                            return additional_posts_ids
                 else:
-                    additional = set()
-
+                    additional = set(
+                        map(lambda x: x['id'], additional)
+                    )
             if len(additional):
                 additional_recommendations = set(additional[:count])
                 return additional_recommendations

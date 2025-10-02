@@ -174,3 +174,7 @@ class TagSerializer(CustomSerializer, serializers.HyperlinkedModelSerializer):
             context=self.context,
         )
         return serializer.data
+
+
+class SearchPostSerializer(serializers.Serializer):
+    text = serializers.CharField()

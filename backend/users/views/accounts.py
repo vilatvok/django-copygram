@@ -47,8 +47,7 @@ class ProfileView(DetailView):
             context['request_to_follow'] = False
 
         # recommendations for user
-        recommender = Recommender(user)
-        recommendations = recommender.get_follows_ids()
+        recommendations = Recommender(user).get_follows_ids()
         context['recommendations'] = User.objects.filter(id__in=recommendations)
         return context
 

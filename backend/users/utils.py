@@ -5,7 +5,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 
-from common.utils import create_action, fix_posts_files, get_blocked_users, redis_client
+from common.utils import create_action, get_blocked_users, redis_client
 from users.models import User, Action, Follower, Block
 from users.tasks import generate_recommendations
 from blogs.models import Comment, Post
@@ -22,7 +22,6 @@ def get_users(user: User):
 
 def get_user_posts(user_id: int):
     posts = Post.objects.annotated().filter(owner=user_id)
-    posts = fix_posts_files(posts)
     return posts
 
 

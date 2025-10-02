@@ -7,3 +7,5 @@ staticfiles/
 htmlcov/
 test_media/
 fixtures/
+common/fakes/
+.env*

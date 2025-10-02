@@ -1,18 +1,14 @@
-from django.db import transaction, IntegrityError
-from django.db.models import Q
+from django.db import transaction, IntegrityError, models
 from django.utils.decorators import method_decorator
 from taggit.models import Tag
 from rest_framework import status
 from rest_framework.viewsets import ViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
-from common.utils import cache_queryset, create_action, fix_posts_files, get_blocked_users
+from common.utils import cache_queryset, create_action, get_blocked_users
 from common.viewsets import (
     CustomModelViewSet,
     NonUpdateViewSet,
@@ -22,30 +18,28 @@ from blogs import utils
 from blogs.filters import PostFilter
 from blogs.models import Comment, Story, UninterestingPost
 from blogs.api import serializers
-from blogs.permissions import IsOwner
+from blogs.permissions import IsOwner, PostAuthenticated
 from users.models import Follower
 
 
 class PostViewSet(CustomModelViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwner]
+    permission_classes = [PostAuthenticated, IsOwner]
     filter_backends = [DjangoFilterBackend]
     filterset_class = PostFilter
 
     def get_queryset(self):
         return utils.get_explore_posts()
 
-    def get_serializer_class(self):
-        if self.action in ['list', 'create']:
-            return serializers.PostSerializer
-        elif self.action in ['update', 'partial_update']:
-            return serializers.PostUpdateSerializer
-        return serializers.PostDetailSerializer
-
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
 
-        queryset = fix_posts_files(queryset)
+        # * Amount of posts depends on user's authentication status
+        user = request.user
+        if user.is_authenticated:
+            queryset = utils.get_explore_posts(user)
+        else:
+            queryset = self.get_queryset()
 
+        queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -53,6 +47,13 @@ class PostViewSet(CustomModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'feed', 'create']:
+            return serializers.PostSerializer
+        elif self.action in ['update', 'partial_update']:
+            return serializers.PostUpdateSerializer
+        return serializers.PostDetailSerializer
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -85,22 +86,7 @@ class PostViewSet(CustomModelViewSet):
     @action(detail=False, methods=['get'])
     def feed(self, request):
         queryset = utils.get_feed_posts(request.user.id)
-        serializer = serializers.PostSerializer(
-            instance=queryset,
-            many=True,
-            context={'request': request},
-        )
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'])
-    def explore(self, request):
-        user = request.user
-        if user.is_authenticated:
-            queryset = utils.get_explore_posts(user)
-        else:
-            queryset = utils.get_explore_posts()
-
-        serializer = serializers.PostSerializer(
+        serializer = self.get_serializer(
             instance=queryset,
             many=True,
             context={'request': request},
@@ -273,8 +259,8 @@ class StoryViewSet(NonUpdateViewSet):
     def get_queryset(self):
         blocked_users = get_blocked_users(self.request.user)
         stories = Story.objects.exclude(
-            Q(owner__in=blocked_users) |
-            Q(archived=True),
+            models.Q(owner__in=blocked_users) |
+            models.Q(archived=True),
         ).select_related('owner')
         return stories
 

@@ -12,7 +12,7 @@ from django.contrib.postgres.search import (
 )
 from taggit.models import Tag
 
-from common.utils import fix_posts_files, redis_client, get_blocked_users
+from common.utils import redis_client, get_blocked_users
 from users.forms import ReportForm
 from users.models import User, Action, Follower
 from blogs.models import Post
@@ -72,7 +72,6 @@ class ActivityView(ListView):
     def get_queryset(self):
         user = self.request.user
         posts = Post.objects.annotated().filter(likes=user)
-        posts = fix_posts_files(posts)
         comments = (
             user.comments.exclude(post__archived=True).
             select_related('post', 'owner')

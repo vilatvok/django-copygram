@@ -6,24 +6,24 @@
 
 {% block content %}
 	<div class="accordion accordion mb-4" id="accordionFlushExample">
-		<div class="accordion-item bg-dark">
-			<h2 class="accordion-header">
-				<button class="accordion-button collapsed bg-dark text-light" type="button" 
-					data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" 
-					aria-expanded="false" aria-controls="flush-collapseOne">
-					Filters
-				</button>
-			</h2>
-			{% if form %}
-				<form action="{% url 'blogs:feed' %}">
+		{% if form %}
+			<div class="accordion-item bg-dark">
+				<h2 class="accordion-header">
+					<button class="accordion-button collapsed bg-dark text-light" type="button" 
+						data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" 
+						aria-expanded="false" aria-controls="flush-collapseOne">
+						Filters
+					</button>
+				</h2>
+				<form action="{% url 'blogs:explore' %}">
 					<div id="flush-collapseOne" class="accordion-collapse collapse" 
 							data-bs-parent="#accordionFlushExample">
 						<div class="accordion-body text-light">{{ form.as_p }}</div>
 						<input type="submit" class="btn btn-success ms-3 mb-3">
 					</div>
 				</form>
-			{% endif %}
-		</div>
+			</div>
+		{% endif %}
 	</div>
 	{% if posts %}
 		<div class="row row-cols-1 row-cols-md-5 g-4">

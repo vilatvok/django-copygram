@@ -23,7 +23,7 @@ class Command(BaseCommand):
                 user = random.choice(users)
                 file_extension = fake.file_name(extension='jpeg')
                 file = ContentFile(fake.image(), name=file_extension)
-                p = Post(owner=user)
+                p = Post(owner=user, description=fake.text())
                 pm = PostMedia(post=p, file=file)
                 posts.append(p)
                 posts_media.append(pm)

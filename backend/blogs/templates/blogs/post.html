@@ -104,9 +104,9 @@
 				{% if post.owner == request.user %}
 					<form action="{% url 'blogs:delete_post' post.id %}" method="post">
 						{% csrf_token %}
-						<button class="btn btn-success">Delete</button>
+						<button class="btn btn-success me-1">Delete</button>
 					</form>
-					<a class="btn btn-success" 
+					<a class="btn btn-success me-1" 
 						href="{% url 'blogs:edit_post' post.id %}" 
 						role="button">Edit</a>
 					<form action="{% url 'blogs:archive_post' post.id %}" method="post">

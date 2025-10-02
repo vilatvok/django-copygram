@@ -1,5 +1,5 @@
-from django.db.models import Q
 from django.conf import settings
+from django.db.models import Q
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
-from common.utils import cache_queryset, fix_posts_files, redis_client
+from common.utils import cache_queryset, redis_client
 from common.viewsets import CustomModelViewSet, ListModelViewSet
 from users.api import serializers
 from users.api.mixins import FollowerRequestMixin
@@ -345,7 +345,6 @@ class ActivityViewSet(ViewSet):
         posts = cache.get(key)
         if posts is None:
             posts = Post.objects.annotated().filter(likes=user)
-            posts = fix_posts_files(posts)
             cache.set(key, posts, 60 * 10)
 
         serializer = PostSerializer(
@@ -417,8 +416,7 @@ class RecommendationViewSet(ListModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        r = Recommender(self.request.user)
-        recommendations = r.get_follows_ids()
+        recommendations = Recommender(self.request.user).get_follows_ids()
         users = User.objects.filter(
             id__in=recommendations,
         ).select_related('privacy')

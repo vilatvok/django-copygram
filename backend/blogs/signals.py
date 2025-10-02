@@ -15,7 +15,6 @@ def create_post(instance, created, **kwargs):
     owner = instance.owner
     cached = []
 
-    # update cache
     if created:
         # get post owner followers
         followers = owner.followers.values_list('from_user_id', flat=True)

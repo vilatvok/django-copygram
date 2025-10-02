@@ -12,7 +12,7 @@ class LoginRequiredMiddleware:
     def __call__(self, request):
         allowed_domens = [
             request.path.startswith('/login'),
-            request.path.startswith('/feed'),
+            request.path.startswith('/explore'),
             request.path.startswith('/api'),
             request.path.startswith('/social'),
             request.path.startswith('/password'),

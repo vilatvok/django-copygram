@@ -10,6 +10,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
 from common.utils import create_action, redis_client, get_blocked_users
 from blogs import utils
+from blogs.filters import PostFilter
 from blogs.models import Comment, Post, PostMedia, UninterestingPost
 from blogs.forms import PostForm
 from blogs.mixins import PostActionMixin, PostsMixin
@@ -18,18 +19,29 @@ from users.models import Follower
 
 class ExploreView(PostsMixin):
 
-    def perform_queryset(self):
+    def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
             queryset = utils.get_explore_posts(user)
         else:
             queryset = utils.get_explore_posts()
-        return queryset
+
+        self.filter_queryset = PostFilter(
+            self.request.GET,
+            queryset=queryset,
+            request=self.request,
+        )
+        return self.filter_queryset.qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = self.filter_queryset.form
+        return context
 
 
 class FeedView(PostsMixin):
 
-    def perform_queryset(self):
+    def get_queryset(self):
         return utils.get_feed_posts(self.request.user.id)
 
 

@@ -70,11 +70,3 @@ def generate_recommendations(self, users: list[int]):
             lock.release()
     else:
         self.retry(countdown=5)
-
-
-# @shared_task
-# def create_day_activity_log(user_id: int):
-#     user = User.objects.get(id=user_id)
-#     total_activity = user.day_activities.get_total_day_activity(user)
-#     UserDayActivity.objects.create(user=user, total_activity=total_activity)
-#     return total_activity

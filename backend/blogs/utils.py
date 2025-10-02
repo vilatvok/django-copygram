@@ -1,5 +1,13 @@
+import base64
+import json
+import google.generativeai as genai
+import google.api_core.exceptions as google_exceptions
+
+from typing_extensions import TypedDict
 from django.db import transaction, models
 from django.core.cache import cache
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.db.models.functions import Concat
 
 from common.utils import create_action, get_blocked_users, redis_client
 from blogs.models import Post, PostMedia, Story, UninterestingPost
@@ -58,27 +66,23 @@ def get_posts(user: User):
 
 
 def get_explore_posts(user: User | None = None):
-    if user is None:
-        posts = Post.objects.annotated().prefetch_related('tags').order_by('?')
-    else:
+    vip_users = redis_client.smembers('active_vip_users')
+    posts = (
+        Post.objects.annotated().
+        annotate(
+            is_vip=models.Case(
+                models.When(owner_id__in=vip_users, then=models.Value(True)),
+                default=models.Value(False),
+                output_field=models.BooleanField()
+            )
+        ).
+        prefetch_related('tags').
+        order_by('-is_vip', '?')
+    )
+    if user:
         blocked_users = get_blocked_users(user)
         posts_ids = Recommender(user).get_posts_ids()
-
-        vip_users = redis_client.smembers('active_vip_users')
-        posts = (
-            Post.objects.annotated().
-            annotate(
-                is_vip=models.Case(
-                    models.When(owner_id__in=vip_users, then=models.Value(True)),
-                    default=models.Value(False),
-                    output_field=models.BooleanField()
-                )
-            ).
-            filter(id__in=posts_ids).
-            exclude(owner__in=blocked_users).
-            prefetch_related('tags').
-            order_by('-is_vip', '?')
-        )
+        posts = posts.exclude(owner__in=blocked_users).filter(id__in=posts_ids)
     return posts
 
 
@@ -102,7 +106,11 @@ def get_archived_posts(user_id: int):
             filter(owner_id=user_id, archived=True).
             annotate(
                 likes_count=models.Count('likes'),
-                file=models.Subquery(subquery.values('file')[:1]),
+                file=Concat(
+                    models.Value('/media/'),
+                    models.Subquery(subquery.values('file')[:1]),
+                    output_field=models.CharField()
+                )
             ).
             select_related('owner', 'owner__privacy')
         )
@@ -128,3 +136,75 @@ def get_uninteresting_posts(user_id: int):
         posts = Post.objects.annotated().filter(id__in=posts_ids)
         cache.set(key, posts, 60 * 60)
     return posts
+
+
+class SearchEngineAI:
+
+    class AiResponse(TypedDict):
+        values: list[str]
+    
+    def __init__(self, api_key: str):
+        self.model = self.create_ai_model(api_key)
+
+    def create_ai_model(self, api_key: str):
+        genai.configure(api_key=api_key)
+        return genai.GenerativeModel("gemini-1.5-flash")
+
+    @staticmethod
+    def generate_prompt(text: str) -> str:
+        prompt=f"""
+        Extract key parameters from this text
+        that can be useful for database search.
+        For example emotions or places, etc.
+        Text: {text}'\n
+
+        Use this JSON schema:
+
+        Output = {{'values': list[str]}}
+        Return: Output
+        """
+        return prompt
+
+    def search(self, text: str) -> str:
+        prompt = self.generate_prompt(text)
+        encoded_text = base64.b64encode(text.encode()).decode()
+
+        cache_key = f'search:{encoded_text}'
+        response = cache.get(cache_key)
+        if response is None:
+            try:
+            
+                response = self.model.generate_content(
+                    prompt,
+                    generation_config=genai.GenerationConfig(
+                        response_mime_type='application/json',
+                        response_schema=self.AiResponse
+                    )
+                )
+                cache.set(cache_key, response, 60 * 60)
+            except google_exceptions.InvalidArgument:
+                raise ValueError('Invalid AI API key.')
+            except google_exceptions.NotFound:
+                raise AttributeError('Model not found.')
+            except google_exceptions.ResourceExhausted:
+                raise ValueError('Resource exhausted.')
+        return response.text
+
+    def get_posts(self, text: str):
+        search_result = self.search(text)
+        decoded = json.loads(search_result)
+
+        filtered_search = (' | '.join(decoded['values']))
+        search_query = SearchQuery(filtered_search, search_type='raw')
+        search_vector = SearchVector('description')
+        posts = (
+            Post.objects.annotated().
+            annotate(
+                search=search_vector,
+                rank=SearchRank(search_vector, search_query)
+            ).
+            filter(search=search_query).
+            prefetch_related('tags').
+            order_by('-rank')
+        )
+        return posts

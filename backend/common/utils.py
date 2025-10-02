@@ -3,7 +3,6 @@ import redis
 from datetime import timedelta
 from django.utils import timezone
 from django.core.cache import cache
-from django.core.files.storage import default_storage
 from django.contrib.contenttypes.models import ContentType
 
 from users.models import Action
@@ -81,11 +80,3 @@ def get_user_ip(request):
     else:
         ip_addr = req_headers.get('REMOTE_ADDR')
     return ip_addr
-
-
-def fix_posts_files(posts):
-    processed_posts = []
-    for post in posts:
-        post.file = default_storage.url(post.file)
-        processed_posts.append(post)
-    return processed_posts

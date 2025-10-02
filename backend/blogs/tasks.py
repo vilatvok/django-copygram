@@ -8,7 +8,7 @@ from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 from common import redis_client
 from blogs.models import Story
-from blogs.similarities import compare_descriptions
+from blogs.similarities import Recognizer
 
 
 @shared_task
@@ -40,11 +40,12 @@ def archive_story_scheduler(story_id, story_date):
 
 
 @shared_task
-def remove_similar_posts(username, data, posts):
+def remove_similar_posts(username: str, data: list[dict], posts: list[dict]):
     exclude = update_posts_recommendations.delay(data, posts)
     with allow_join_result():
         exclude = set(exclude.get())
-        redis_client.srem(f'user:{username}:posts_recommendations', *exclude)
+        if len(exclude):
+            redis_client.srem(f'user:{username}:posts_recommendations', *exclude)
 
 
 @shared_task
@@ -59,18 +60,21 @@ def update_posts_recommendations(uninteresting: list[dict], others: list[dict]):
         for post in others:
             another_image = post['file'].split('/')[-1].split('.')[0]
             another_description = post['description']
+
+            # get similarity between images
             try:
                 sim_images = image_data.at[image, another_image]
             except KeyError:
                 sim_images = 0
 
             if description and another_description:
-                sim_texts = compare_descriptions(
+                sim_texts = Recognizer.compare_descriptions(
                     description,
                     another_description,
                 )
             else:
                 sim_texts = 0
+
             if sim_images > 0.75 or sim_texts > 0.75:
                 posts.append(post['id'])
     return posts
